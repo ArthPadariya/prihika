@@ -1,24 +1,28 @@
 import { supabase } from "@/lib/supabase";
-import {
-  seedBanners,
-  seedCategories,
-  seedCollections,
-  seedFeaturedSections,
-  seedHomepageContent,
-  seedProducts,
-  seedReels,
-  seedTestimonials,
-} from "@/lib/seed-data";
 import type {
   Banner,
   Category,
   Collection,
   FeaturedSection,
   HomepageContent,
+  HomepagePromise,
   HomepageReel,
+  NewsletterSection,
   Product as AdminProduct,
   Testimonial,
 } from "@/types/admin";
+import {
+  seedBanners,
+  seedCategories,
+  seedCollections,
+  seedFeaturedSections,
+  seedHomepageContent,
+  seedNewsletter,
+  seedProducts,
+  seedPromises,
+  seedReels,
+  seedTestimonials,
+} from "@/lib/seed-defaults";
 import type { Product } from "./store";
 
 export interface StoreCategory extends Category {
@@ -36,7 +40,9 @@ export interface HomeData {
   banners: Banner[];
   reels: HomepageReel[];
   featuredSections: FeaturedSection[];
+  promises: HomepagePromise[];
   testimonials: Testimonial[];
+  newsletter: NewsletterSection | null;
 }
 
 function canReturnEmpty(error: unknown) {
@@ -44,12 +50,17 @@ function canReturnEmpty(error: unknown) {
   const candidate = error as { code?: unknown; message?: unknown };
   const message = typeof candidate.message === "string" ? candidate.message.toLowerCase() : "";
   return (
-    candidate.code === "42P01" ||
     candidate.code === "42501" ||
+    candidate.code === "42P01" ||
     candidate.code === "PGRST205" ||
+    message.includes("permission denied") ||
     message.includes("does not exist") ||
     message.includes("schema cache")
   );
+}
+
+function logStoreReadError(context: string, error: unknown) {
+  console.error(`[Prihika storefront] ${context}`, error);
 }
 
 function firstImage(product: AdminProduct) {
@@ -84,33 +95,13 @@ function mapProduct(product: AdminProduct): Product {
 async function safeSelect<T>(query: PromiseLike<{ data: T | null; error: unknown }>, empty: T) {
   const { data, error } = await query;
   if (error) {
-    if (canReturnEmpty(error)) return empty;
+    if (canReturnEmpty(error)) {
+      logStoreReadError("Supabase read returned no usable data", error);
+      return empty;
+    }
     throw error;
   }
   return data ?? empty;
-}
-
-function mergeByKey<T>(items: T[], seed: T[], keyFor: (item: T) => string | null | undefined) {
-  const merged = new Map(seed.map((item) => [keyFor(item), item]).filter(([key]) => Boolean(key)));
-  for (const item of items) {
-    const key = keyFor(item);
-    if (key) merged.set(key, item);
-  }
-  return [...merged.values(), ...items.filter((item) => !keyFor(item))];
-}
-
-function mergeProducts(items: AdminProduct[]) {
-  const merged = new Map(seedProducts.map((product) => [product.slug, product]));
-  for (const item of items) {
-    const fallback = item.slug ? merged.get(item.slug) : undefined;
-    merged.set(item.slug, {
-      ...fallback,
-      ...item,
-      product_images: item.product_images?.length ? item.product_images : fallback?.product_images,
-      product_faqs: item.product_faqs?.length ? item.product_faqs : fallback?.product_faqs,
-    });
-  }
-  return [...merged.values()];
 }
 
 export async function listStoreProducts() {
@@ -121,17 +112,14 @@ export async function listStoreProducts() {
       .eq("status", "active")
       .order("featured", { ascending: false })
       .order("created_at", { ascending: false }),
-    [] as AdminProduct[],
+    seedProducts as AdminProduct[],
   );
-  return mergeProducts(data).map(mapProduct);
+  return (data.length ? data : seedProducts).map(mapProduct);
 }
 
 export async function getStoreProduct(idOrSlug: string) {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     idOrSlug,
-  );
-  const seeded = seedProducts.find(
-    (product) => product.id === idOrSlug || product.slug === idOrSlug,
   );
   const { data, error } = await supabase
     .from("products")
@@ -141,26 +129,35 @@ export async function getStoreProduct(idOrSlug: string) {
     .limit(1)
     .maybeSingle();
   if (error) {
-    if (canReturnEmpty(error)) return seeded ? mapProduct(seeded) : null;
+    if (canReturnEmpty(error)) {
+      logStoreReadError("Product lookup returned no usable data", error);
+      const fallback = seedProducts.find(
+        (product) => product.id === idOrSlug || product.slug === idOrSlug,
+      );
+      return fallback ? mapProduct(fallback) : null;
+    }
     throw error;
   }
-  return data ? mapProduct(data as AdminProduct) : seeded ? mapProduct(seeded) : null;
+  const fallback = seedProducts.find(
+    (product) => product.id === idOrSlug || product.slug === idOrSlug,
+  );
+  return data ? mapProduct(data as AdminProduct) : fallback ? mapProduct(fallback) : null;
 }
 
 export async function listStoreCategories() {
   const [categories, products] = await Promise.all([
     safeSelect(
       supabase
-        .from("categories")
+        .from("homepage_categories")
         .select("*")
         .eq("featured", true)
         .order("display_order", { ascending: true }),
-      [] as Category[],
+      seedCategories,
     ),
     listStoreProducts(),
   ]);
 
-  return mergeByKey(categories, seedCategories, (category) => category.slug).map((category) => ({
+  return (categories.length ? categories : seedCategories).map((category) => ({
     ...category,
     count: products.filter((product) => product.category === category.name).length,
   }));
@@ -168,96 +165,109 @@ export async function listStoreCategories() {
 
 export async function listStoreCollections(featuredOnly = false) {
   let query = supabase
-    .from("collections")
+    .from("homepage_collections")
     .select("*")
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false });
   if (featuredOnly) query = query.eq("featured", true);
-  const collections = await safeSelect(query, [] as Collection[]);
-  return mergeByKey(
-    collections,
-    featuredOnly ? seedCollections.filter((collection) => collection.featured) : seedCollections,
-    (collection) => collection.slug,
-  );
+  const data = await safeSelect(query, seedCollections);
+  return data.length ? data : seedCollections;
 }
 
 export async function listStoreBanners() {
-  const banners = await safeSelect(
+  const data = await safeSelect(
     supabase
-      .from("banners")
+      .from("homepage_banners")
       .select("*")
       .eq("active", true)
       .order("sort_order", { ascending: true }),
-    [] as Banner[],
+    seedBanners,
   );
-  return mergeByKey(
-    banners,
-    seedBanners.filter((banner) => banner.active),
-    (banner) => banner.id,
-  );
+  return data.length ? data : seedBanners;
 }
 
 export async function listStoreReels() {
-  const reels = await safeSelect(
+  const data = await safeSelect(
     supabase
       .from("homepage_reels")
       .select("*")
       .eq("active", true)
       .order("sort_order", { ascending: true }),
-    [] as HomepageReel[],
+    seedReels,
   );
-  return mergeByKey(
-    reels,
-    seedReels.filter((reel) => reel.active),
-    (reel) => reel.id,
-  );
+  return data.length ? data : seedReels;
 }
 
 export async function listStoreTestimonials() {
-  const testimonials = await safeSelect(
+  const data = await safeSelect(
     supabase
-      .from("testimonials")
+      .from("homepage_testimonials")
       .select("*")
       .eq("active", true)
       .order("display_order", { ascending: true }),
-    [] as Testimonial[],
+    seedTestimonials,
   );
-  return mergeByKey(
-    testimonials,
-    seedTestimonials.filter((testimonial) => testimonial.active),
-    (testimonial) => testimonial.id,
-  );
+  return data.length ? data : seedTestimonials;
 }
 
 export async function getHomepageContent() {
   const { data, error } = await supabase
-    .from("homepage_content")
+    .from("homepage_hero")
     .select("*")
     .eq("active", true)
     .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) {
-    if (canReturnEmpty(error)) return seedHomepageContent;
+    if (canReturnEmpty(error)) {
+      logStoreReadError("Homepage content returned no usable data", error);
+      return seedHomepageContent;
+    }
     throw error;
   }
   return (data as HomepageContent | null) ?? seedHomepageContent;
 }
 
 export async function listStoreFeaturedSections() {
-  const sections = await safeSelect(
+  const data = await safeSelect(
     supabase
-      .from("featured_sections")
+      .from("homepage_featured_products")
       .select("*")
       .eq("active", true)
       .order("display_order", { ascending: true }),
-    [] as FeaturedSection[],
+    seedFeaturedSections,
   );
-  return mergeByKey(
-    sections,
-    seedFeaturedSections.filter((section) => section.active),
-    (section) => section.section_key,
+  return data.length ? data : seedFeaturedSections;
+}
+
+export async function listStorePromises() {
+  const data = await safeSelect(
+    supabase
+      .from("homepage_promises")
+      .select("*")
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
+    seedPromises,
   );
+  return data.length ? data : seedPromises;
+}
+
+export async function getNewsletterSection() {
+  const { data, error } = await supabase
+    .from("newsletter_section")
+    .select("*")
+    .eq("active", true)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    if (canReturnEmpty(error)) {
+      logStoreReadError("Newsletter section returned no usable data", error);
+      return seedNewsletter;
+    }
+    throw error;
+  }
+  return (data as NewsletterSection | null) ?? seedNewsletter;
 }
 
 function productsForSection(products: Product[], section?: FeaturedSection) {
@@ -280,7 +290,9 @@ export async function getHomeData(): Promise<HomeData> {
     banners,
     reels,
     featuredSections,
+    promises,
     testimonials,
+    newsletter,
   ] = await Promise.all([
     getHomepageContent(),
     listStoreProducts(),
@@ -289,7 +301,9 @@ export async function getHomeData(): Promise<HomeData> {
     listStoreBanners(),
     listStoreReels(),
     listStoreFeaturedSections(),
+    listStorePromises(),
     listStoreTestimonials(),
+    getNewsletterSection(),
   ]);
   const bestsellers = productsForSection(
     products,
@@ -308,7 +322,9 @@ export async function getHomeData(): Promise<HomeData> {
     banners,
     reels,
     featuredSections,
+    promises,
     testimonials,
+    newsletter,
     bestsellers,
     trending,
     instagramProducts: products.slice(0, 6),

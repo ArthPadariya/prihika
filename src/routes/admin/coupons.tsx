@@ -55,7 +55,7 @@ function CouponsPage() {
 
   useRealtimeRefresh("coupons", () => void load());
 
-  const openForm = (coupon?: Coupon) => {
+  const openForm = useCallback((coupon?: Coupon) => {
     setEditing(coupon ?? null);
     setForm(
       coupon
@@ -70,18 +70,55 @@ function CouponsPage() {
         : blankCoupon,
     );
     setOpen(true);
-  };
+  }, []);
 
   const submit = async () => {
     if (!form.code.trim()) {
       toast.error("Coupon code is required.");
       return;
     }
-    await saveCoupon(form, editing?.id);
-    toast.success(editing ? "Coupon updated." : "Coupon created.");
-    setOpen(false);
-    await load();
+    try {
+      await saveCoupon(form, editing?.id);
+      toast.success(editing ? "Coupon updated." : "Coupon created.");
+      setOpen(false);
+      await load();
+    } catch (saveError) {
+      console.error("[Prihika CMS] Coupon save failed", saveError);
+      toast.error(saveError instanceof Error ? saveError.message : "Coupon could not be saved.");
+    }
   };
+
+  const toggleCoupon = useCallback(
+    async (coupon: Coupon) => {
+      try {
+        await updateCoupon(coupon.id, { active: !coupon.active });
+        toast.success("Coupon status updated.");
+        await load();
+      } catch (toggleError) {
+        console.error("[Prihika CMS] Coupon status update failed", toggleError);
+        toast.error(
+          toggleError instanceof Error ? toggleError.message : "Coupon status could not be saved.",
+        );
+      }
+    },
+    [load],
+  );
+
+  const removeCoupon = useCallback(
+    async (coupon: Coupon) => {
+      try {
+        await deleteCoupon(coupon.id);
+        toast.success("Coupon deleted.");
+        await load();
+      } catch (deleteError) {
+        console.error("[Prihika CMS] Coupon delete failed", deleteError);
+        toast.error(
+          deleteError instanceof Error ? deleteError.message : "Coupon could not be deleted.",
+        );
+      }
+    },
+    [load],
+  );
 
   const columns: AdminColumn<Coupon>[] = useMemo(
     () => [
@@ -123,13 +160,13 @@ function CouponsPage() {
               Edit
             </button>
             <button
-              onClick={() => void updateCoupon(coupon.id, { active: !coupon.active }).then(load)}
+              onClick={() => void toggleCoupon(coupon)}
               className="rounded-lg border border-[#d7b46a]/30 px-3 py-2 text-sm text-[#f4d58d] hover:bg-[#d7b46a]/10"
             >
               Toggle
             </button>
             <button
-              onClick={() => void deleteCoupon(coupon.id).then(load)}
+              onClick={() => void removeCoupon(coupon)}
               className="rounded-lg border border-red-300/20 p-2 text-red-300 hover:bg-red-500/10"
             >
               <Trash2 className="h-4 w-4" />
@@ -138,7 +175,7 @@ function CouponsPage() {
         ),
       },
     ],
-    [load],
+    [openForm, removeCoupon, toggleCoupon],
   );
 
   return (

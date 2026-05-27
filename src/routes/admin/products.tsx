@@ -166,17 +166,32 @@ function ProductsPage() {
         item.id === product.id ? { ...item, featured: !product.featured } : item,
       ),
     );
-    await toggleProductFeatured(product.id, !product.featured);
-    toast.success(product.featured ? "Removed from featured." : "Marked as featured.");
-    await load();
+    try {
+      await toggleProductFeatured(product.id, !product.featured);
+      toast.success(product.featured ? "Removed from featured." : "Marked as featured.");
+      await load();
+    } catch (toggleError) {
+      console.error("[Prihika CMS] Product featured toggle failed", toggleError);
+      toast.error(
+        toggleError instanceof Error ? toggleError.message : "Product could not be updated.",
+      );
+      await load();
+    }
   };
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    await deleteProduct(deleteTarget.id);
-    toast.success("Product deleted.");
-    setDeleteTarget(null);
-    await load();
+    try {
+      await deleteProduct(deleteTarget.id);
+      toast.success("Product deleted.");
+      setDeleteTarget(null);
+      await load();
+    } catch (deleteError) {
+      console.error("[Prihika CMS] Product delete failed", deleteError);
+      toast.error(
+        deleteError instanceof Error ? deleteError.message : "Product could not be deleted.",
+      );
+    }
   };
 
   return (
@@ -413,6 +428,7 @@ function ProductFormModal({
       onOpenChange(false);
       await onSaved();
     } catch (error) {
+      console.error("[Prihika CMS] Product save failed", error);
       toast.error(error instanceof Error ? error.message : "Product could not be saved.");
     } finally {
       setSaving(false);
@@ -425,15 +441,22 @@ function ProductFormModal({
       toast.success("Images staged. They will be attached when the product is saved.");
       return;
     }
-    await addProductImages(
-      urls.map((url, index) => ({
-        product_id: product.id,
-        image_url: url,
-        sort_order: (product.product_images?.length ?? 0) + index,
-      })),
-    );
-    toast.success("Product images saved.");
-    await onSaved();
+    try {
+      await addProductImages(
+        urls.map((url, index) => ({
+          product_id: product.id,
+          image_url: url,
+          sort_order: (product.product_images?.length ?? 0) + index,
+        })),
+      );
+      toast.success("Product images saved.");
+      await onSaved();
+    } catch (imageError) {
+      console.error("[Prihika CMS] Product image save failed", imageError);
+      toast.error(
+        imageError instanceof Error ? imageError.message : "Product images could not be saved.",
+      );
+    }
   };
 
   const addFaq = async () => {
@@ -444,21 +467,31 @@ function ProductFormModal({
       toast.success("FAQ staged. It will be attached when the product is saved.");
       return;
     }
-    await saveProductFaq({
-      product_id: product.id,
-      question: faqDraft.question,
-      answer: faqDraft.answer,
-      sort_order: product.product_faqs?.length ?? 0,
-    });
-    setFaqDraft({ question: "", answer: "" });
-    toast.success("FAQ added.");
-    await onSaved();
+    try {
+      await saveProductFaq({
+        product_id: product.id,
+        question: faqDraft.question,
+        answer: faqDraft.answer,
+        sort_order: product.product_faqs?.length ?? 0,
+      });
+      setFaqDraft({ question: "", answer: "" });
+      toast.success("FAQ added.");
+      await onSaved();
+    } catch (faqError) {
+      console.error("[Prihika CMS] Product FAQ save failed", faqError);
+      toast.error(faqError instanceof Error ? faqError.message : "FAQ could not be saved.");
+    }
   };
 
   const removeFaq = async (faq: ProductFaq) => {
-    await deleteProductFaq(faq.id);
-    toast.success("FAQ deleted.");
-    await onSaved();
+    try {
+      await deleteProductFaq(faq.id);
+      toast.success("FAQ deleted.");
+      await onSaved();
+    } catch (faqError) {
+      console.error("[Prihika CMS] Product FAQ delete failed", faqError);
+      toast.error(faqError instanceof Error ? faqError.message : "FAQ could not be deleted.");
+    }
   };
 
   return (

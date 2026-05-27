@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { listStoreProducts } from "@/lib/products";
 import { formatPrice, useShop } from "@/lib/store";
 import type { Product } from "@/lib/store";
+import { useRealtimeRefresh } from "@/hooks/useRealtimeRefresh";
 
 export function SearchModal() {
   const { searchOpen, setSearchOpen } = useShop();
@@ -15,6 +16,13 @@ export function SearchModal() {
     if (!searchOpen) return;
     void listStoreProducts().then(setProducts);
   }, [searchOpen]);
+
+  useRealtimeRefresh("products", () => {
+    if (searchOpen) void listStoreProducts().then(setProducts);
+  });
+  useRealtimeRefresh("product_images", () => {
+    if (searchOpen) void listStoreProducts().then(setProducts);
+  });
 
   const results = useMemo(() => {
     if (!q.trim()) return products.slice(0, 4);
@@ -27,7 +35,7 @@ export function SearchModal() {
           p.collection.toLowerCase().includes(term),
       )
       .slice(0, 6);
-  }, [q]);
+  }, [products, q]);
 
   return (
     <AnimatePresence>

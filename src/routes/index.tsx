@@ -13,7 +13,10 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "PriHiKa - Luxury Jewellery, Made to Be Remembered" },
-      { name: "description", content: "Heirloom-grade rings, necklaces, and earrings handcrafted in fine metals." },
+      {
+        name: "description",
+        content: "Heirloom-grade rings, necklaces, and earrings handcrafted in fine metals.",
+      },
     ],
   }),
   component: HomePage,
@@ -33,12 +36,14 @@ function HomePage() {
 
   useRealtimeRefresh("products", () => void load());
   useRealtimeRefresh("product_images", () => void load());
-  useRealtimeRefresh("categories", () => void load());
-  useRealtimeRefresh("collections", () => void load());
-  useRealtimeRefresh("homepage_content", () => void load());
-  useRealtimeRefresh("featured_sections", () => void load());
-  useRealtimeRefresh("testimonials", () => void load());
-  useRealtimeRefresh("banners", () => void load());
+  useRealtimeRefresh("homepage_categories", () => void load());
+  useRealtimeRefresh("homepage_collections", () => void load());
+  useRealtimeRefresh("homepage_hero", () => void load());
+  useRealtimeRefresh("homepage_featured_products", () => void load());
+  useRealtimeRefresh("homepage_promises", () => void load());
+  useRealtimeRefresh("homepage_testimonials", () => void load());
+  useRealtimeRefresh("newsletter_section", () => void load());
+  useRealtimeRefresh("homepage_banners", () => void load());
   useRealtimeRefresh("homepage_reels", () => void load());
 
   const section = (key: string) =>
@@ -61,7 +66,10 @@ function HomePage() {
                   <Sparkles className="h-3.5 w-3.5" /> {hero.hero_badge}
                 </span>
               ) : null}
-              <h1 className="font-display text-5xl md:text-6xl lg:text-7xl leading-[1.05] text-charcoal" style={{ color: "var(--charcoal)" }}>
+              <h1
+                className="font-display text-5xl md:text-6xl lg:text-7xl leading-[1.05] text-charcoal"
+                style={{ color: "var(--charcoal)" }}
+              >
                 {hero.hero_title}
               </h1>
               {hero.hero_subtitle ? (
@@ -85,7 +93,9 @@ function HomePage() {
                     href={hero.cta_secondary_link || "/collections"}
                     className="inline-flex items-center gap-2 px-8 py-4 rounded-full border border-charcoal/30 hover:border-rose-gold hover:text-rose-gold transition-colors"
                   >
-                    <span className="text-xs tracking-[0.25em] uppercase">{hero.cta_secondary}</span>
+                    <span className="text-xs tracking-[0.25em] uppercase">
+                      {hero.cta_secondary}
+                    </span>
                   </a>
                 ) : null}
               </div>
@@ -94,11 +104,18 @@ function HomePage() {
                 <div className="mt-12 flex items-center gap-6 text-xs text-muted-foreground">
                   {data.collections.length ? (
                     <div className="flex -space-x-2">
-                      {data.collections.slice(0, 3).map((collection) => (
-                        collection.cover_image ? (
-                          <img key={collection.id} src={collection.cover_image} className="h-9 w-9 rounded-full object-cover border-2 border-background" alt="" />
-                        ) : null
-                      ))}
+                      {data.collections
+                        .slice(0, 3)
+                        .map((collection) =>
+                          collection.cover_image ? (
+                            <img
+                              key={collection.id}
+                              src={collection.cover_image}
+                              className="h-9 w-9 rounded-full object-cover border-2 border-background"
+                              alt=""
+                            />
+                          ) : null,
+                        )}
                     </div>
                   ) : null}
                   <p className="leading-snug">{hero.hero_featured_note}</p>
@@ -131,7 +148,9 @@ function HomePage() {
                     <Gem className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-[10px] tracking-widest uppercase text-muted-foreground">Certified</p>
+                    <p className="text-[10px] tracking-widest uppercase text-muted-foreground">
+                      Certified
+                    </p>
                     <p className="text-sm font-medium">BIS Hallmarked</p>
                   </div>
                 </motion.div>
@@ -145,11 +164,22 @@ function HomePage() {
         <section className="container mx-auto px-5 lg:px-10 py-12">
           <div className="space-y-5">
             {data.banners.map((banner) => (
-              <a key={banner.id} href={banner.link_url || "#"} className="block overflow-hidden rounded-[2rem] shine">
+              <a
+                key={banner.id}
+                href={banner.link_url || "#"}
+                className="block overflow-hidden rounded-[2rem] shine"
+              >
                 <picture>
-                  {banner.mobile_image_url ? <source media="(max-width: 640px)" srcSet={banner.mobile_image_url} /> : null}
+                  {banner.mobile_image_url ? (
+                    <source media="(max-width: 640px)" srcSet={banner.mobile_image_url} />
+                  ) : null}
                   {banner.desktop_image_url ? (
-                    <img src={banner.desktop_image_url} alt={banner.title ?? ""} loading="lazy" className="aspect-[16/5] w-full object-cover" />
+                    <img
+                      src={banner.desktop_image_url}
+                      alt={banner.title ?? ""}
+                      loading="lazy"
+                      className="aspect-[16/5] w-full object-cover"
+                    />
                   ) : null}
                 </picture>
               </a>
@@ -160,7 +190,10 @@ function HomePage() {
 
       {data.categories.length ? (
         <section className="container mx-auto px-5 lg:px-10 py-24">
-          <SectionHeader eyebrow={section("categories")?.eyebrow ?? ""} title={section("categories")?.title ?? ""} />
+          <SectionHeader
+            eyebrow={section("categories")?.eyebrow ?? ""}
+            title={section("categories")?.title ?? ""}
+          />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mt-12">
             {data.categories.map((category, i) => (
               <motion.div
@@ -181,9 +214,14 @@ function HomePage() {
                       />
                     ) : null}
                     <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 via-charcoal/0 to-transparent" />
-                    <div className="absolute bottom-5 left-5 right-5 text-ivory" style={{ color: "var(--ivory)" }}>
+                    <div
+                      className="absolute bottom-5 left-5 right-5 text-ivory"
+                      style={{ color: "var(--ivory)" }}
+                    >
                       <p className="font-display text-2xl">{category.name}</p>
-                      <p className="text-xs tracking-widest uppercase opacity-80">{category.count} pieces</p>
+                      <p className="text-xs tracking-widest uppercase opacity-80">
+                        {category.count} pieces
+                      </p>
                     </div>
                   </div>
                 </Link>
@@ -196,8 +234,15 @@ function HomePage() {
       {data.bestsellers.length ? (
         <section className="container mx-auto px-5 lg:px-10 py-12">
           <div className="flex items-end justify-between mb-12">
-            <SectionHeader eyebrow={section("bestsellers")?.eyebrow ?? ""} title={section("bestsellers")?.title ?? ""} align="left" />
-            <Link to="/shop" className="hidden md:inline-flex items-center gap-2 text-xs tracking-widest uppercase text-rose-gold">
+            <SectionHeader
+              eyebrow={section("bestsellers")?.eyebrow ?? ""}
+              title={section("bestsellers")?.title ?? ""}
+              align="left"
+            />
+            <Link
+              to="/shop"
+              className="hidden md:inline-flex items-center gap-2 text-xs tracking-widest uppercase text-rose-gold"
+            >
               View all <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -211,7 +256,10 @@ function HomePage() {
 
       {data.collections.length ? (
         <section className="container mx-auto px-5 lg:px-10 py-24">
-          <SectionHeader eyebrow={section("collections")?.eyebrow ?? ""} title={section("collections")?.title ?? ""} />
+          <SectionHeader
+            eyebrow={section("collections")?.eyebrow ?? ""}
+            title={section("collections")?.title ?? ""}
+          />
           <div className="grid lg:grid-cols-3 gap-5 mt-12">
             {data.collections.slice(0, 3).map((collection, i) => (
               <motion.div
@@ -223,14 +271,27 @@ function HomePage() {
                 className="group relative aspect-[4/5] rounded-3xl overflow-hidden shine"
               >
                 {collection.cover_image ? (
-                  <img src={collection.cover_image} alt={collection.title} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105" />
+                  <img
+                    src={collection.cover_image}
+                    alt={collection.title}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                  />
                 ) : null}
                 <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/10 to-transparent" />
-                <div className="absolute inset-0 p-8 flex flex-col justify-end text-ivory" style={{ color: "var(--ivory)" }}>
-                  <p className="text-[11px] tracking-[0.3em] uppercase opacity-80 mb-2">Collection</p>
+                <div
+                  className="absolute inset-0 p-8 flex flex-col justify-end text-ivory"
+                  style={{ color: "var(--ivory)" }}
+                >
+                  <p className="text-[11px] tracking-[0.3em] uppercase opacity-80 mb-2">
+                    Collection
+                  </p>
                   <h3 className="font-display text-4xl mb-2">{collection.title}</h3>
                   <p className="text-sm opacity-90 mb-5">{collection.description}</p>
-                  <Link to="/collections" className="inline-flex w-fit items-center gap-2 text-xs tracking-widest uppercase border-b border-ivory/60 pb-1 hover:border-rose-gold hover:text-rose-gold transition-colors">
+                  <Link
+                    to="/collections"
+                    className="inline-flex w-fit items-center gap-2 text-xs tracking-widest uppercase border-b border-ivory/60 pb-1 hover:border-rose-gold hover:text-rose-gold transition-colors"
+                  >
                     Discover <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
@@ -242,36 +303,42 @@ function HomePage() {
 
       <section className="py-24" style={{ background: "var(--beige)" }}>
         <div className="container mx-auto px-5 lg:px-10">
-          <SectionHeader eyebrow="The PriHiKa Promise" title="Designed with care, delivered with grace" />
+          <SectionHeader
+            eyebrow="The PriHiKa Promise"
+            title="Designed with care, delivered with grace"
+          />
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mt-14">
-            {[
-              { Icon: Gem, title: "Certified Quality", desc: "Every piece is BIS hallmarked and IGI/SGL certified." },
-              { Icon: Truck, title: "Free Shipping", desc: "Insured and tracked delivery across India, on us." },
-              { Icon: Award, title: "Lifetime Exchange", desc: "Update or exchange your jewellery, always." },
-              { Icon: Headphones, title: "Concierge Support", desc: "Talk to a stylist 7 days a week, on WhatsApp." },
-            ].map((item, i) => (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: i * 0.08 }}
-                className="text-center"
-              >
-                <div className="mx-auto h-14 w-14 rounded-full bg-background grid place-items-center text-rose-gold shadow-soft mb-5">
-                  <item.Icon className="h-5 w-5" />
-                </div>
-                <h4 className="font-display text-xl mb-2">{item.title}</h4>
-                <p className="text-sm text-muted-foreground leading-relaxed max-w-[240px] mx-auto">{item.desc}</p>
-              </motion.div>
-            ))}
+            {data.promises.map((item, i) => {
+              const Icon = promiseIcon(item.icon);
+              return (
+                <motion.div
+                  key={item.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: i * 0.08 }}
+                  className="text-center"
+                >
+                  <div className="mx-auto h-14 w-14 rounded-full bg-background grid place-items-center text-rose-gold shadow-soft mb-5">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h4 className="font-display text-xl mb-2">{item.title}</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed max-w-[240px] mx-auto">
+                    {item.description}
+                  </p>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {data.trending.length ? (
         <section className="container mx-auto px-5 lg:px-10 py-24">
-          <SectionHeader eyebrow={section("trending")?.eyebrow ?? ""} title={section("trending")?.title ?? ""} />
+          <SectionHeader
+            eyebrow={section("trending")?.eyebrow ?? ""}
+            title={section("trending")?.title ?? ""}
+          />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mt-12">
             {data.trending.map((product, i) => (
               <ProductCard key={product.id} product={product} index={i} />
@@ -285,7 +352,10 @@ function HomePage() {
       {data.testimonials.length ? (
         <section className="py-24">
           <div className="container mx-auto px-5 lg:px-10">
-            <SectionHeader eyebrow={section("testimonials")?.eyebrow ?? ""} title={section("testimonials")?.title ?? ""} />
+            <SectionHeader
+              eyebrow={section("testimonials")?.eyebrow ?? ""}
+              title={section("testimonials")?.title ?? ""}
+            />
             <div className="grid md:grid-cols-3 gap-6 mt-14">
               {data.testimonials.slice(0, 3).map((testimonial, i) => (
                 <motion.div
@@ -301,7 +371,9 @@ function HomePage() {
                       <span key={key}>★</span>
                     ))}
                   </div>
-                  <p className="font-display text-lg leading-relaxed text-foreground/90">"{testimonial.text}"</p>
+                  <p className="font-display text-lg leading-relaxed text-foreground/90">
+                    "{testimonial.text}"
+                  </p>
                   <div className="mt-6 pt-6 border-t border-border">
                     <p className="text-sm font-medium">{testimonial.name}</p>
                     <p className="text-xs text-muted-foreground">{testimonial.city}</p>
@@ -315,7 +387,10 @@ function HomePage() {
 
       {data.instagramProducts.length ? (
         <section className="container mx-auto px-5 lg:px-10 py-12">
-          <SectionHeader eyebrow={section("instagram")?.eyebrow ?? ""} title={section("instagram")?.title ?? ""} />
+          <SectionHeader
+            eyebrow={section("instagram")?.eyebrow ?? ""}
+            title={section("instagram")?.title ?? ""}
+          />
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mt-12">
             {data.instagramProducts.map((product, i) => (
               <motion.a
@@ -330,9 +405,17 @@ function HomePage() {
                 className="group relative aspect-square rounded-xl overflow-hidden bg-secondary"
               >
                 {product.image ? (
-                  <img src={product.image} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  <img
+                    src={product.image}
+                    alt=""
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
                 ) : null}
-                <div className="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/30 transition-colors grid place-items-center text-ivory opacity-0 group-hover:opacity-100" style={{ color: "var(--ivory)" }}>
+                <div
+                  className="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/30 transition-colors grid place-items-center text-ivory opacity-0 group-hover:opacity-100"
+                  style={{ color: "var(--ivory)" }}
+                >
                   <Sparkles className="h-5 w-5" />
                 </div>
               </motion.a>
@@ -350,11 +433,18 @@ function HomePage() {
           className="relative overflow-hidden rounded-[2.5rem] p-10 md:p-16 text-center"
           style={{ background: "var(--gradient-luxury)" }}
         >
-          <div className="absolute inset-0 opacity-30" style={{ background: "radial-gradient(circle at 30% 20%, var(--rose-soft), transparent 60%)" }} />
+          <div
+            className="absolute inset-0 opacity-30"
+            style={{
+              background: "radial-gradient(circle at 30% 20%, var(--rose-soft), transparent 60%)",
+            }}
+          />
           <div className="relative max-w-2xl mx-auto">
-            <span className="text-xs tracking-[0.3em] uppercase text-rose-gold">Join the circle</span>
-            <h2 className="font-display text-4xl md:text-5xl mt-4">First access. Quiet edits.</h2>
-            <p className="mt-4 text-muted-foreground">Be the first to see new drops, private previews, and stylist notes - once a fortnight, never more.</p>
+            <span className="text-xs tracking-[0.3em] uppercase text-rose-gold">
+              {data.newsletter?.eyebrow}
+            </span>
+            <h2 className="font-display text-4xl md:text-5xl mt-4">{data.newsletter?.title}</h2>
+            <p className="mt-4 text-muted-foreground">{data.newsletter?.description}</p>
             <form
               onSubmit={(e) => e.preventDefault()}
               className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
@@ -362,7 +452,7 @@ function HomePage() {
               <input
                 type="email"
                 required
-                placeholder="your@email.com"
+                placeholder={data.newsletter?.placeholder ?? "your@email.com"}
                 className="flex-1 px-5 py-4 rounded-full bg-background/80 backdrop-blur border border-border outline-none focus:border-rose-gold transition-colors text-sm"
               />
               <button
@@ -370,7 +460,7 @@ function HomePage() {
                 className="px-7 py-4 rounded-full shine text-xs tracking-[0.25em] uppercase"
                 style={{ background: "var(--gradient-rose)", color: "var(--ivory)" }}
               >
-                Subscribe
+                {data.newsletter?.button_label ?? "Subscribe"}
               </button>
             </form>
           </div>
@@ -380,7 +470,20 @@ function HomePage() {
   );
 }
 
-function SectionHeader({ eyebrow, title, align = "center" }: { eyebrow: string; title: string; align?: "center" | "left" }) {
+function promiseIcon(icon?: string | null) {
+  const icons = { Award, Gem, Headphones, Truck };
+  return icons[(icon ?? "Gem") as keyof typeof icons] ?? Gem;
+}
+
+function SectionHeader({
+  eyebrow,
+  title,
+  align = "center",
+}: {
+  eyebrow: string;
+  title: string;
+  align?: "center" | "left";
+}) {
   if (!eyebrow && !title) return null;
   return (
     <motion.div
@@ -390,8 +493,14 @@ function SectionHeader({ eyebrow, title, align = "center" }: { eyebrow: string; 
       transition={{ duration: 0.6 }}
       className={align === "center" ? "text-center" : "text-left"}
     >
-      {eyebrow ? <span className="text-xs tracking-[0.3em] uppercase text-rose-gold">{eyebrow}</span> : null}
-      {title ? <h2 className="font-display text-3xl md:text-5xl mt-3 max-w-2xl mx-auto leading-tight">{title}</h2> : null}
+      {eyebrow ? (
+        <span className="text-xs tracking-[0.3em] uppercase text-rose-gold">{eyebrow}</span>
+      ) : null}
+      {title ? (
+        <h2 className="font-display text-3xl md:text-5xl mt-3 max-w-2xl mx-auto leading-tight">
+          {title}
+        </h2>
+      ) : null}
     </motion.div>
   );
 }

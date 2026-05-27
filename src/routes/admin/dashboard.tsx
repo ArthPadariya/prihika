@@ -20,7 +20,6 @@ import { AdminCardSkeleton } from "@/components/admin/Skeletons";
 import { StatsChart } from "@/components/admin/StatsChart";
 import { getDashboardStats, listAllProducts, listOrders } from "@/services/adminService";
 import { useRealtimeRefresh } from "@/hooks/useRealtimeRefresh";
-import { seededDashboardStats } from "@/lib/seed-data";
 import type { ChartPoint, DashboardStats } from "@/types/admin";
 
 export const Route = createFileRoute("/admin/dashboard")({
@@ -50,8 +49,9 @@ function DashboardPage() {
       setRevenueData(buildRevenueData(orders));
       setCategoryData(buildCategoryData(products));
     } catch (loadError) {
+      console.error("[Prihika CMS] Dashboard load failed", loadError);
       setError(loadError instanceof Error ? loadError.message : "Dashboard data could not load.");
-      setStats(seededDashboardStats);
+      setStats(emptyDashboardStats);
       setRevenueData(buildRevenueData([]));
       setCategoryData(buildCategoryData([]));
     } finally {
@@ -64,10 +64,10 @@ function DashboardPage() {
   }, [load]);
 
   useRealtimeRefresh("products", () => void load());
-  useRealtimeRefresh("categories", () => void load());
-  useRealtimeRefresh("collections", () => void load());
+  useRealtimeRefresh("homepage_categories", () => void load());
+  useRealtimeRefresh("homepage_collections", () => void load());
   useRealtimeRefresh("homepage_reels", () => void load());
-  useRealtimeRefresh("banners", () => void load());
+  useRealtimeRefresh("homepage_banners", () => void load());
   useRealtimeRefresh("orders", () => void load());
   useRealtimeRefresh("admin_users", () => void load());
 
@@ -79,7 +79,7 @@ function DashboardPage() {
       })),
     [revenueData],
   );
-  const visibleStats = stats ?? seededDashboardStats;
+  const visibleStats = stats ?? emptyDashboardStats;
 
   return (
     <AdminLayout
@@ -203,6 +203,24 @@ function DashboardPage() {
     </AdminLayout>
   );
 }
+
+const emptyDashboardStats: DashboardStats = {
+  totalProducts: 0,
+  totalCategories: 0,
+  totalCollections: 0,
+  totalOrders: 0,
+  totalRevenue: 0,
+  totalReels: 0,
+  totalBanners: 0,
+  activeReels: 0,
+  activeBanners: 0,
+  featuredProducts: 0,
+  lowStock: 0,
+  pendingOrders: 0,
+  deliveredOrders: 0,
+  totalAdminUsers: 0,
+  newestProducts: [],
+};
 
 function buildRevenueData(orders: { created_at?: string | null; total_amount?: number | null }[]) {
   const months = Array.from({ length: 6 }).map((_, index) => {

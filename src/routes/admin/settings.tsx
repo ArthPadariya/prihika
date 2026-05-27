@@ -31,7 +31,7 @@ function SettingsPage() {
   }, [load]);
 
   useRealtimeRefresh("products", () => void load());
-  useRealtimeRefresh("banners", () => void load());
+  useRealtimeRefresh("homepage_banners", () => void load());
   useRealtimeRefresh("homepage_reels", () => void load());
   useRealtimeRefresh("orders", () => void load());
   useRealtimeRefresh("admin_users", () => void load());

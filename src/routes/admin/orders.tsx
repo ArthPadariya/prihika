@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Eye, Search } from "lucide-react";
+import { Download, Eye, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { DataTable, type AdminColumn } from "@/components/admin/DataTable";
 import { AdminTableSkeleton } from "@/components/admin/Skeletons";
 import { Modal } from "@/components/admin/Modal";
-import { listOrders, updateOrderStatus } from "@/services/adminService";
+import { deleteOrder, listOrders, updateOrderStatus } from "@/services/adminService";
 import { useRealtimeRefresh } from "@/hooks/useRealtimeRefresh";
 import type { Order, OrderStatus } from "@/types/admin";
 
@@ -48,9 +48,33 @@ function OrdersPage() {
 
   const changeStatus = useCallback(
     async (id: string, nextStatus: string) => {
-      await updateOrderStatus(id, nextStatus as OrderStatus);
-      toast.success("Order status updated.");
-      await load();
+      try {
+        await updateOrderStatus(id, nextStatus as OrderStatus);
+        toast.success("Order status updated.");
+        await load();
+      } catch (statusError) {
+        console.error("[Prihika CMS] Order status update failed", statusError);
+        toast.error(
+          statusError instanceof Error ? statusError.message : "Order status could not be saved.",
+        );
+      }
+    },
+    [load],
+  );
+
+  const removeOrder = useCallback(
+    async (order: Order) => {
+      try {
+        await deleteOrder(order.id);
+        toast.success("Order deleted.");
+        setSelected(null);
+        await load();
+      } catch (deleteError) {
+        console.error("[Prihika CMS] Order delete failed", deleteError);
+        toast.error(
+          deleteError instanceof Error ? deleteError.message : "Order could not be deleted.",
+        );
+      }
     },
     [load],
   );
@@ -101,16 +125,24 @@ function OrdersPage() {
         header: "Details",
         className: "text-right",
         cell: (order) => (
-          <button
-            onClick={() => setSelected(order)}
-            className="rounded-md p-2 text-[#f6ead0]/60 hover:bg-white/10 hover:text-white"
-          >
-            <Eye className="h-4 w-4" />
-          </button>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setSelected(order)}
+              className="rounded-md p-2 text-[#f6ead0]/60 hover:bg-white/10 hover:text-white"
+            >
+              <Eye className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => void removeOrder(order)}
+              className="rounded-md border border-red-300/20 p-2 text-red-300 hover:bg-red-500/10"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         ),
       },
     ],
-    [changeStatus],
+    [changeStatus, removeOrder],
   );
 
   const exportCsv = () => {

@@ -80,19 +80,44 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "PriHiKa — Luxury Jewellery, Made to Be Remembered" },
-      { name: "description", content: "Heirloom-grade rings, necklaces, and earrings handcrafted in 18K gold, rose gold and platinum. Discover the PriHiKa world." },
+      {
+        name: "description",
+        content:
+          "Heirloom-grade rings, necklaces, and earrings handcrafted in 18K gold, rose gold and platinum. Discover the PriHiKa world.",
+      },
       { name: "author", content: "PriHiKa" },
       { property: "og:title", content: "PriHiKa — Luxury Jewellery, Made to Be Remembered" },
-      { property: "og:description", content: "Heirloom-grade rings, necklaces, and earrings handcrafted in 18K gold, rose gold and platinum. Discover the PriHiKa world." },
+      {
+        property: "og:description",
+        content:
+          "Heirloom-grade rings, necklaces, and earrings handcrafted in 18K gold, rose gold and platinum. Discover the PriHiKa world.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "PriHiKa — Luxury Jewellery, Made to Be Remembered" },
-      { name: "twitter:description", content: "Heirloom-grade rings, necklaces, and earrings handcrafted in 18K gold, rose gold and platinum. Discover the PriHiKa world." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/600ca25d-c3c9-408d-a3b2-fc4e8e6ed3cc/id-preview-e5000bfc--847e608a-9bfe-432e-900a-2492f095f9f1.lovable.app-1779210026040.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/600ca25d-c3c9-408d-a3b2-fc4e8e6ed3cc/id-preview-e5000bfc--847e608a-9bfe-432e-900a-2492f095f9f1.lovable.app-1779210026040.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Heirloom-grade rings, necklaces, and earrings handcrafted in 18K gold, rose gold and platinum. Discover the PriHiKa world.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/600ca25d-c3c9-408d-a3b2-fc4e8e6ed3cc/id-preview-e5000bfc--847e608a-9bfe-432e-900a-2492f095f9f1.lovable.app-1779210026040.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/600ca25d-c3c9-408d-a3b2-fc4e8e6ed3cc/id-preview-e5000bfc--847e608a-9bfe-432e-900a-2492f095f9f1.lovable.app-1779210026040.png",
+      },
     ],
     links: [
+      {
+        rel: "icon",
+        type: "image/svg+xml",
+        href: "/favicon.svg",
+      },
       {
         rel: "stylesheet",
         href: appCss,

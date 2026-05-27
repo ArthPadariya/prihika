@@ -72,6 +72,10 @@ export function getAuthErrorMessage(error: unknown) {
   }
 
   if (error instanceof Error) {
+    if (error.message.toLowerCase().includes("permission denied")) {
+      return "Supabase permissions are blocking this request. Apply the latest admin RLS migration and try again.";
+    }
+
     return error.message;
   }
 
@@ -81,12 +85,18 @@ export function getAuthErrorMessage(error: unknown) {
 
   if (error && typeof error === "object") {
     const candidate = error as Record<string, unknown>;
+    const code = candidate.code ?? candidate.error_code;
+    const message = typeof candidate.message === "string" ? candidate.message.toLowerCase() : "";
+
+    if (code === "42501" || message.includes("permission denied")) {
+      return "Supabase permissions are blocking this request. Apply the latest admin RLS migration and try again.";
+    }
+
     for (const key of ["message", "error_description", "msg", "details", "hint"]) {
       const value = candidate[key];
       if (typeof value === "string" && value.trim()) return value;
     }
 
-    const code = candidate.code ?? candidate.error_code;
     if (code === "invalid_credentials") {
       return "Invalid email or password. Please use the exact new password you created.";
     }

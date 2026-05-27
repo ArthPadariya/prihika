@@ -1,6 +1,83 @@
 -- Premium storefront seed data. This keeps the existing PriHiKa storefront populated
 -- while making the same content editable from the admin CMS.
 
+alter table public.products add column if not exists title text;
+alter table public.products add column if not exists slug text;
+alter table public.products add column if not exists price numeric not null default 0;
+alter table public.products add column if not exists compare_price numeric;
+alter table public.products add column if not exists description text;
+alter table public.products add column if not exists category text;
+alter table public.products add column if not exists collection text;
+alter table public.products add column if not exists material text;
+alter table public.products add column if not exists stock integer not null default 0;
+alter table public.products add column if not exists featured boolean not null default false;
+alter table public.products add column if not exists status text not null default 'draft';
+alter table public.products add column if not exists updated_at timestamptz not null default now();
+
+alter table public.product_images add column if not exists product_id uuid references public.products(id) on delete cascade;
+alter table public.product_images add column if not exists image_url text;
+alter table public.product_images add column if not exists alt_text text;
+alter table public.product_images add column if not exists sort_order integer not null default 0;
+
+alter table public.product_faqs add column if not exists product_id uuid references public.products(id) on delete cascade;
+alter table public.product_faqs add column if not exists question text;
+alter table public.product_faqs add column if not exists answer text;
+alter table public.product_faqs add column if not exists sort_order integer not null default 0;
+
+alter table public.homepage_reels add column if not exists thumbnail_url text;
+
+create unique index if not exists products_slug_key on public.products(slug);
+create unique index if not exists categories_slug_key on public.categories(slug);
+create unique index if not exists collections_slug_key on public.collections(slug);
+create unique index if not exists featured_sections_section_key_key on public.featured_sections(section_key);
+
+alter table public.categories add column if not exists image text;
+alter table public.categories add column if not exists description text;
+alter table public.categories add column if not exists featured boolean not null default true;
+alter table public.categories add column if not exists display_order integer not null default 0;
+alter table public.categories add column if not exists updated_at timestamptz not null default now();
+
+alter table public.collections add column if not exists description text;
+alter table public.collections add column if not exists cover_image text;
+alter table public.collections add column if not exists featured boolean not null default true;
+alter table public.collections add column if not exists seo_title text;
+alter table public.collections add column if not exists seo_description text;
+alter table public.collections add column if not exists display_order integer not null default 0;
+alter table public.collections add column if not exists updated_at timestamptz not null default now();
+
+alter table public.homepage_content add column if not exists hero_subtitle text;
+alter table public.homepage_content add column if not exists hero_image text;
+alter table public.homepage_content add column if not exists hero_badge text;
+alter table public.homepage_content add column if not exists hero_featured_note text;
+alter table public.homepage_content add column if not exists cta_primary text;
+alter table public.homepage_content add column if not exists cta_primary_link text;
+alter table public.homepage_content add column if not exists cta_secondary text;
+alter table public.homepage_content add column if not exists cta_secondary_link text;
+alter table public.homepage_content add column if not exists testimonial_text text;
+alter table public.homepage_content add column if not exists active boolean not null default true;
+alter table public.homepage_content add column if not exists updated_at timestamptz not null default now();
+
+alter table public.featured_sections add column if not exists eyebrow text;
+alter table public.featured_sections add column if not exists description text;
+alter table public.featured_sections add column if not exists product_ids uuid[] not null default '{}';
+alter table public.featured_sections add column if not exists active boolean not null default true;
+alter table public.featured_sections add column if not exists display_order integer not null default 0;
+alter table public.featured_sections add column if not exists updated_at timestamptz not null default now();
+
+alter table public.testimonials add column if not exists city text;
+alter table public.testimonials add column if not exists rating integer not null default 5;
+alter table public.testimonials add column if not exists active boolean not null default true;
+alter table public.testimonials add column if not exists display_order integer not null default 0;
+alter table public.testimonials add column if not exists updated_at timestamptz not null default now();
+
+alter table public.banners add column if not exists title text;
+alter table public.banners add column if not exists desktop_image_url text;
+alter table public.banners add column if not exists mobile_image_url text;
+alter table public.banners add column if not exists link_url text;
+alter table public.banners add column if not exists active boolean not null default true;
+alter table public.banners add column if not exists sort_order integer not null default 0;
+alter table public.banners add column if not exists updated_at timestamptz not null default now();
+
 insert into public.products
   (id, title, slug, price, compare_price, description, category, collection, material, stock, featured, status)
 values
@@ -25,42 +102,48 @@ on conflict (slug) do update set
   updated_at = now();
 
 insert into public.product_images
-  (id, product_id, image_url, alt_text, sort_order)
-values
-  ('00000000-0000-4000-8000-000000001101', '00000000-0000-4000-8000-000000000101', '/seed-assets/solitaire.jpg', 'Celeste Solitaire Ring', 0),
-  ('00000000-0000-4000-8000-000000001102', '00000000-0000-4000-8000-000000000101', '/seed-assets/ring.jpg', 'Solitaire ring side profile', 1),
-  ('00000000-0000-4000-8000-000000001201', '00000000-0000-4000-8000-000000000102', '/seed-assets/ring.jpg', 'Noor Stack Ring', 0),
-  ('00000000-0000-4000-8000-000000001301', '00000000-0000-4000-8000-000000000103', '/seed-assets/pendant.jpg', 'Aara Diamond Pendant', 0),
-  ('00000000-0000-4000-8000-000000001401', '00000000-0000-4000-8000-000000000104', '/seed-assets/necklace.jpg', 'Mira Layered Necklace', 0),
-  ('00000000-0000-4000-8000-000000001501', '00000000-0000-4000-8000-000000000105', '/seed-assets/earrings.jpg', 'Ira Diamond Hoops', 0),
-  ('00000000-0000-4000-8000-000000001601', '00000000-0000-4000-8000-000000000106', '/seed-assets/bracelet.jpg', 'Leela Tennis Bracelet', 0),
-  ('00000000-0000-4000-8000-000000001701', '00000000-0000-4000-8000-000000000107', '/seed-assets/bangle.jpg', 'Saanjh Gold Bangle', 0)
-on conflict (id) do update set
-  image_url = excluded.image_url,
-  alt_text = excluded.alt_text,
-  sort_order = excluded.sort_order;
+  (product_id, image_url, alt_text, sort_order)
+select product_id, image_url, alt_text, sort_order
+from (
+  values
+    ('00000000-0000-4000-8000-000000000101'::uuid, '/seed-assets/solitaire.jpg', 'Celeste Solitaire Ring', 0),
+    ('00000000-0000-4000-8000-000000000101'::uuid, '/seed-assets/ring.jpg', 'Solitaire ring side profile', 1),
+    ('00000000-0000-4000-8000-000000000102'::uuid, '/seed-assets/ring.jpg', 'Noor Stack Ring', 0),
+    ('00000000-0000-4000-8000-000000000103'::uuid, '/seed-assets/pendant.jpg', 'Aara Diamond Pendant', 0),
+    ('00000000-0000-4000-8000-000000000104'::uuid, '/seed-assets/necklace.jpg', 'Mira Layered Necklace', 0),
+    ('00000000-0000-4000-8000-000000000105'::uuid, '/seed-assets/earrings.jpg', 'Ira Diamond Hoops', 0),
+    ('00000000-0000-4000-8000-000000000106'::uuid, '/seed-assets/bracelet.jpg', 'Leela Tennis Bracelet', 0),
+    ('00000000-0000-4000-8000-000000000107'::uuid, '/seed-assets/bangle.jpg', 'Saanjh Gold Bangle', 0)
+) as seeded(product_id, image_url, alt_text, sort_order)
+where not exists (
+  select 1 from public.product_images existing
+  where existing.product_id = seeded.product_id and existing.image_url = seeded.image_url
+);
 
 insert into public.product_faqs
-  (id, product_id, question, answer, sort_order)
-values
-  ('00000000-0000-4000-8000-000000001011', '00000000-0000-4000-8000-000000000101', 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
-  ('00000000-0000-4000-8000-000000001012', '00000000-0000-4000-8000-000000000101', 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1),
-  ('00000000-0000-4000-8000-000000001021', '00000000-0000-4000-8000-000000000102', 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
-  ('00000000-0000-4000-8000-000000001022', '00000000-0000-4000-8000-000000000102', 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1),
-  ('00000000-0000-4000-8000-000000001031', '00000000-0000-4000-8000-000000000103', 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
-  ('00000000-0000-4000-8000-000000001032', '00000000-0000-4000-8000-000000000103', 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1),
-  ('00000000-0000-4000-8000-000000001041', '00000000-0000-4000-8000-000000000104', 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
-  ('00000000-0000-4000-8000-000000001042', '00000000-0000-4000-8000-000000000104', 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1),
-  ('00000000-0000-4000-8000-000000001051', '00000000-0000-4000-8000-000000000105', 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
-  ('00000000-0000-4000-8000-000000001052', '00000000-0000-4000-8000-000000000105', 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1),
-  ('00000000-0000-4000-8000-000000001061', '00000000-0000-4000-8000-000000000106', 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
-  ('00000000-0000-4000-8000-000000001062', '00000000-0000-4000-8000-000000000106', 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1),
-  ('00000000-0000-4000-8000-000000001071', '00000000-0000-4000-8000-000000000107', 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
-  ('00000000-0000-4000-8000-000000001072', '00000000-0000-4000-8000-000000000107', 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1)
-on conflict (id) do update set
-  question = excluded.question,
-  answer = excluded.answer,
-  sort_order = excluded.sort_order;
+  (product_id, question, answer, sort_order)
+select product_id, question, answer, sort_order
+from (
+  values
+    ('00000000-0000-4000-8000-000000000101'::uuid, 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
+    ('00000000-0000-4000-8000-000000000101'::uuid, 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1),
+    ('00000000-0000-4000-8000-000000000102'::uuid, 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
+    ('00000000-0000-4000-8000-000000000102'::uuid, 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1),
+    ('00000000-0000-4000-8000-000000000103'::uuid, 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
+    ('00000000-0000-4000-8000-000000000103'::uuid, 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1),
+    ('00000000-0000-4000-8000-000000000104'::uuid, 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
+    ('00000000-0000-4000-8000-000000000104'::uuid, 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1),
+    ('00000000-0000-4000-8000-000000000105'::uuid, 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
+    ('00000000-0000-4000-8000-000000000105'::uuid, 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1),
+    ('00000000-0000-4000-8000-000000000106'::uuid, 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
+    ('00000000-0000-4000-8000-000000000106'::uuid, 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1),
+    ('00000000-0000-4000-8000-000000000107'::uuid, 'Is this piece certified?', 'Yes. Every PriHiKa fine jewellery piece is BIS hallmarked and quality checked before dispatch.', 0),
+    ('00000000-0000-4000-8000-000000000107'::uuid, 'Can I request styling help before ordering?', 'Yes. The PriHiKa concierge can help with sizing, styling, gifting, and care guidance.', 1)
+) as seeded(product_id, question, answer, sort_order)
+where not exists (
+  select 1 from public.product_faqs existing
+  where existing.product_id = seeded.product_id and existing.question = seeded.question
+);
 
 insert into public.categories
   (id, name, slug, image, description, featured, display_order)
@@ -145,27 +228,28 @@ on conflict (id) do update set
   updated_at = now();
 
 insert into public.banners
-  (id, title, desktop_image_url, mobile_image_url, link_url, active, sort_order)
-values
-  ('00000000-0000-4000-8000-000000000701', 'Bridal appointments', '/seed-assets/collection-statement.jpg', '/seed-assets/collection-bridal.jpg', '/collections', true, 0)
-on conflict (id) do update set
-  title = excluded.title,
-  desktop_image_url = excluded.desktop_image_url,
-  mobile_image_url = excluded.mobile_image_url,
-  link_url = excluded.link_url,
-  active = excluded.active,
-  sort_order = excluded.sort_order;
+  (title, desktop_image_url, mobile_image_url, link_url, active, sort_order)
+select title, desktop_image_url, mobile_image_url, link_url, active, sort_order
+from (
+  values
+    ('Bridal appointments', '/seed-assets/collection-statement.jpg', '/seed-assets/collection-bridal.jpg', '/collections', true, 0)
+) as seeded(title, desktop_image_url, mobile_image_url, link_url, active, sort_order)
+where not exists (
+  select 1 from public.banners existing
+  where existing.title = seeded.title
+);
 
 insert into public.homepage_reels
-  (id, title, video_url, thumbnail_url, active, sort_order)
-values
-  ('00000000-0000-4000-8000-000000000801', 'Solitaire glow', '/seed-assets/solitaire.jpg', '/seed-assets/solitaire.jpg', true, 0),
-  ('00000000-0000-4000-8000-000000000802', 'Layered gold', '/seed-assets/necklace.jpg', '/seed-assets/necklace.jpg', true, 1),
-  ('00000000-0000-4000-8000-000000000803', 'Diamond hoops', '/seed-assets/earrings.jpg', '/seed-assets/earrings.jpg', true, 2),
-  ('00000000-0000-4000-8000-000000000804', 'Bracelet detail', '/seed-assets/bracelet.jpg', '/seed-assets/bracelet.jpg', true, 3)
-on conflict (id) do update set
-  title = excluded.title,
-  video_url = excluded.video_url,
-  thumbnail_url = excluded.thumbnail_url,
-  active = excluded.active,
-  sort_order = excluded.sort_order;
+  (title, video_url, thumbnail_url, active, sort_order)
+select title, video_url, thumbnail_url, active, sort_order
+from (
+  values
+    ('Solitaire glow', '/seed-assets/solitaire.jpg', '/seed-assets/solitaire.jpg', true, 0),
+    ('Layered gold', '/seed-assets/necklace.jpg', '/seed-assets/necklace.jpg', true, 1),
+    ('Diamond hoops', '/seed-assets/earrings.jpg', '/seed-assets/earrings.jpg', true, 2),
+    ('Bracelet detail', '/seed-assets/bracelet.jpg', '/seed-assets/bracelet.jpg', true, 3)
+) as seeded(title, video_url, thumbnail_url, active, sort_order)
+where not exists (
+  select 1 from public.homepage_reels existing
+  where existing.title = seeded.title
+);

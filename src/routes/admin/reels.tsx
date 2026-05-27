@@ -54,30 +54,70 @@ function ReelsPage() {
       toast.error("Upload a reel video first.");
       return;
     }
-    await createReel({
-      title,
-      video_url: videoUrl,
-      thumbnail_url: thumbnailUrl || null,
-      active: true,
-      sort_order: reels.length,
-    });
-    toast.success("Homepage reel added.");
-    setOpen(false);
-    setTitle("");
-    setVideoUrl("");
-    setThumbnailUrl("");
-    await load();
+    try {
+      await createReel({
+        title,
+        video_url: videoUrl,
+        thumbnail_url: thumbnailUrl || null,
+        active: true,
+        sort_order: reels.length,
+      });
+      toast.success("Homepage reel added.");
+      setOpen(false);
+      setTitle("");
+      setVideoUrl("");
+      setThumbnailUrl("");
+      await load();
+    } catch (saveError) {
+      console.error("[Prihika CMS] Reel save failed", saveError);
+      toast.error(
+        saveError instanceof Error ? saveError.message : "Homepage reel could not be saved.",
+      );
+    }
   };
 
   const move = async (reel: HomepageReel, direction: -1 | 1) => {
     const index = reels.findIndex((item) => item.id === reel.id);
     const next = reels[index + direction];
     if (!next) return;
-    await Promise.all([
-      updateReel(reel.id, { sort_order: next.sort_order ?? index + direction }),
-      updateReel(next.id, { sort_order: reel.sort_order ?? index }),
-    ]);
-    await load();
+    try {
+      await Promise.all([
+        updateReel(reel.id, { sort_order: next.sort_order ?? index + direction }),
+        updateReel(next.id, { sort_order: reel.sort_order ?? index }),
+      ]);
+      await load();
+    } catch (moveError) {
+      console.error("[Prihika CMS] Reel reorder failed", moveError);
+      toast.error(
+        moveError instanceof Error ? moveError.message : "Reel order could not be saved.",
+      );
+    }
+  };
+
+  const toggle = async (reel: HomepageReel) => {
+    try {
+      await updateReel(reel.id, { active: !reel.active });
+      toast.success(reel.active ? "Reel hidden." : "Reel activated.");
+      await load();
+    } catch (toggleError) {
+      console.error("[Prihika CMS] Reel toggle failed", toggleError);
+      toast.error(
+        toggleError instanceof Error ? toggleError.message : "Reel could not be updated.",
+      );
+    }
+  };
+
+  const remove = async (reel: HomepageReel) => {
+    try {
+      await deleteReel(reel.id);
+      toast.success("Reel deleted.");
+      await load();
+    } catch (deleteError) {
+      console.error("[Prihika CMS] Reel delete failed", deleteError);
+      toast.error(
+        deleteError instanceof Error ? deleteError.message : "Reel could not be deleted.",
+      );
+    }
   };
 
   return (
@@ -137,13 +177,13 @@ function ReelsPage() {
                     <GripVertical className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => void updateReel(reel.id, { active: !reel.active }).then(load)}
+                    onClick={() => void toggle(reel)}
                     className="rounded-md px-3 py-2 text-xs text-[#f4d58d] hover:bg-[#d7b46a]/10"
                   >
                     Toggle
                   </button>
                   <button
-                    onClick={() => void deleteReel(reel.id).then(load)}
+                    onClick={() => void remove(reel)}
                     className="rounded-md p-2 text-red-300/70 hover:bg-red-500/10"
                   >
                     <Trash2 className="h-4 w-4" />

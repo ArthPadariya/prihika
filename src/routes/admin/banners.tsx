@@ -52,7 +52,7 @@ function BannersPage() {
     void load();
   }, [load]);
 
-  useRealtimeRefresh("banners", () => void load());
+  useRealtimeRefresh("homepage_banners", () => void load());
 
   const openForm = (banner?: Banner) => {
     setEditing(banner ?? null);
@@ -67,21 +67,61 @@ function BannersPage() {
   };
 
   const submit = async () => {
-    await saveBanner({ ...form, sort_order: editing?.sort_order ?? banners.length }, editing?.id);
-    toast.success(editing ? "Banner updated." : "Banner created.");
-    setOpen(false);
-    await load();
+    try {
+      await saveBanner({ ...form, sort_order: editing?.sort_order ?? banners.length }, editing?.id);
+      toast.success(editing ? "Banner updated." : "Banner created.");
+      setOpen(false);
+      await load();
+    } catch (submitError) {
+      console.error("[Prihika CMS] Banner save failed", submitError);
+      toast.error(
+        submitError instanceof Error ? submitError.message : "Banner could not be saved.",
+      );
+    }
   };
 
   const move = async (banner: Banner, direction: -1 | 1) => {
     const index = banners.findIndex((item) => item.id === banner.id);
     const next = banners[index + direction];
     if (!next) return;
-    await Promise.all([
-      saveBanner({ ...banner, sort_order: next.sort_order ?? index + direction }, banner.id),
-      saveBanner({ ...next, sort_order: banner.sort_order ?? index }, next.id),
-    ]);
-    await load();
+    try {
+      await Promise.all([
+        saveBanner({ ...banner, sort_order: next.sort_order ?? index + direction }, banner.id),
+        saveBanner({ ...next, sort_order: banner.sort_order ?? index }, next.id),
+      ]);
+      await load();
+    } catch (moveError) {
+      console.error("[Prihika CMS] Banner reorder failed", moveError);
+      toast.error(
+        moveError instanceof Error ? moveError.message : "Banner order could not be saved.",
+      );
+    }
+  };
+
+  const toggle = async (banner: Banner) => {
+    try {
+      await saveBanner({ ...banner, active: !banner.active }, banner.id);
+      toast.success(banner.active ? "Banner hidden." : "Banner activated.");
+      await load();
+    } catch (toggleError) {
+      console.error("[Prihika CMS] Banner toggle failed", toggleError);
+      toast.error(
+        toggleError instanceof Error ? toggleError.message : "Banner could not be updated.",
+      );
+    }
+  };
+
+  const remove = async (banner: Banner) => {
+    try {
+      await deleteBanner(banner.id);
+      toast.success("Banner deleted.");
+      await load();
+    } catch (deleteError) {
+      console.error("[Prihika CMS] Banner delete failed", deleteError);
+      toast.error(
+        deleteError instanceof Error ? deleteError.message : "Banner could not be deleted.",
+      );
+    }
   };
 
   return (
@@ -154,15 +194,13 @@ function BannersPage() {
                     <GripVertical className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() =>
-                      void saveBanner({ ...banner, active: !banner.active }, banner.id).then(load)
-                    }
+                    onClick={() => void toggle(banner)}
                     className="rounded-lg border border-white/10 px-3 py-2 text-sm text-[#f4d58d] hover:bg-[#d7b46a]/10"
                   >
                     Toggle
                   </button>
                   <button
-                    onClick={() => void deleteBanner(banner.id).then(load)}
+                    onClick={() => void remove(banner)}
                     className="rounded-lg border border-red-300/20 p-2 text-red-300 hover:bg-red-500/10"
                   >
                     <Trash2 className="h-4 w-4" />

@@ -1,12 +1,23 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, Heart, Maximize2, Minus, Plus, Shield, ShoppingBag, Truck, X } from "lucide-react";
+import {
+  ChevronRight,
+  Heart,
+  Maximize2,
+  Minus,
+  Plus,
+  Shield,
+  ShoppingBag,
+  Truck,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProductCard } from "@/components/site/ProductCard";
 import { ProductFaq } from "@/components/site/ProductFaq";
 import { BrandStory } from "@/components/site/BrandStory";
 import { getStoreProduct, listStoreProducts } from "@/lib/products";
 import { formatPrice, type Product, useShop } from "@/lib/store";
+import { useRealtimeRefresh } from "@/hooks/useRealtimeRefresh";
 
 export const Route = createFileRoute("/product/$id")({
   loader: async ({ params }) => {
@@ -15,23 +26,28 @@ export const Route = createFileRoute("/product/$id")({
     return p;
   },
   head: ({ loaderData }) => ({
-    meta: loaderData ? [
-      { title: `${loaderData.name} — PriHiKa` },
-      { name: "description", content: loaderData.description },
-      { property: "og:image", content: loaderData.image },
-    ] : [],
+    meta: loaderData
+      ? [
+          { title: `${loaderData.name} — PriHiKa` },
+          { name: "description", content: loaderData.description },
+          { property: "og:image", content: loaderData.image },
+        ]
+      : [],
   }),
   component: ProductPage,
   notFoundComponent: () => (
     <div className="container mx-auto px-5 py-32 text-center">
       <p className="font-display text-4xl">Piece not found</p>
-      <Link to="/shop" className="mt-6 inline-block text-rose-gold underline">Back to shop</Link>
+      <Link to="/shop" className="mt-6 inline-block text-rose-gold underline">
+        Back to shop
+      </Link>
     </div>
   ),
 });
 
 function ProductPage() {
-  const product = Route.useLoaderData();
+  const initialProduct = Route.useLoaderData();
+  const [product, setProduct] = useState<Product>(initialProduct);
   const { addToCart, toggleWishlist, wishlist } = useShop();
   const [related, setRelated] = useState<Product[]>([]);
   const [qty, setQty] = useState(1);
@@ -43,19 +59,46 @@ function ProductPage() {
   const gallery = [product.image].filter(Boolean);
 
   useEffect(() => {
+    setProduct(initialProduct);
+  }, [initialProduct]);
+
+  const reloadProduct = () => {
+    void getStoreProduct(initialProduct.id).then((nextProduct) => {
+      if (nextProduct) setProduct(nextProduct);
+    });
+  };
+
+  useRealtimeRefresh("products", reloadProduct);
+  useRealtimeRefresh("product_images", reloadProduct);
+  useRealtimeRefresh("product_faqs", reloadProduct);
+
+  useEffect(() => {
     void listStoreProducts().then((items) => {
-      setRelated(items.filter((item) => item.id !== product.id && item.category === product.category).slice(0, 4));
+      setRelated(
+        items
+          .filter((item) => item.id !== product.id && item.category === product.category)
+          .slice(0, 4),
+      );
     });
   }, [product.category, product.id]);
 
   return (
     <div className="container mx-auto px-5 sm:px-6 lg:px-10 py-6 md:py-10">
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-6 md:mb-10">
-        <Link to="/" className="hover:text-rose-gold transition-colors">Home</Link>
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center gap-1.5 text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-6 md:mb-10"
+      >
+        <Link to="/" className="hover:text-rose-gold transition-colors">
+          Home
+        </Link>
         <ChevronRight className="h-3 w-3" />
-        <Link to="/shop" className="hover:text-rose-gold transition-colors">Shop</Link>
+        <Link to="/shop" className="hover:text-rose-gold transition-colors">
+          Shop
+        </Link>
         <ChevronRight className="h-3 w-3" />
-        <span className="text-foreground/70 truncate max-w-[160px] sm:max-w-none normal-case tracking-normal font-display text-xs">{product.name}</span>
+        <span className="text-foreground/70 truncate max-w-[160px] sm:max-w-none normal-case tracking-normal font-display text-xs">
+          {product.name}
+        </span>
       </nav>
 
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-20">
@@ -102,7 +145,10 @@ function ProductPage() {
             </AnimatePresence>
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightbox(true);
+              }}
               aria-label="View fullscreen"
               className="absolute bottom-4 right-4 h-11 w-11 rounded-full bg-background/90 backdrop-blur grid place-items-center text-foreground hover:text-rose-gold transition-all shadow-soft hover:scale-110"
             >
@@ -132,27 +178,51 @@ function ProductPage() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="lg:pt-2"
         >
-          <span className="text-[10px] md:text-xs tracking-[0.32em] uppercase text-rose-gold">{product.collection} Collection</span>
-          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl leading-[1.1] mt-3">{product.name}</h1>
-          <p className="mt-4 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{product.metal}</p>
+          <span className="text-[10px] md:text-xs tracking-[0.32em] uppercase text-rose-gold">
+            {product.collection} Collection
+          </span>
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl leading-[1.1] mt-3">
+            {product.name}
+          </h1>
+          <p className="mt-4 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            {product.metal}
+          </p>
 
           <div className="mt-6 md:mt-7 flex items-baseline gap-3">
             <span className="font-display text-3xl md:text-4xl">{formatPrice(product.price)}</span>
             {product.oldPrice && (
-              <span className="text-muted-foreground line-through">{formatPrice(product.oldPrice)}</span>
+              <span className="text-muted-foreground line-through">
+                {formatPrice(product.oldPrice)}
+              </span>
             )}
           </div>
 
-          <p className="mt-6 md:mt-7 text-sm md:text-base text-foreground/75 leading-[1.8]">{product.description}</p>
+          <p className="mt-6 md:mt-7 text-sm md:text-base text-foreground/75 leading-[1.8]">
+            {product.description}
+          </p>
 
           <div className="mt-9 md:mt-10 flex items-center gap-3 md:gap-4">
             <div className="flex items-center border border-border rounded-full bg-background">
-              <button onClick={() => setQty(Math.max(1, qty - 1))} aria-label="decrease" className="h-14 w-12 grid place-items-center text-muted-foreground hover:text-rose-gold"><Minus className="h-4 w-4" /></button>
+              <button
+                onClick={() => setQty(Math.max(1, qty - 1))}
+                aria-label="decrease"
+                className="h-14 w-12 grid place-items-center text-muted-foreground hover:text-rose-gold"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
               <span className="w-8 text-center text-sm font-medium">{qty}</span>
-              <button onClick={() => setQty(qty + 1)} aria-label="increase" className="h-14 w-12 grid place-items-center text-muted-foreground hover:text-rose-gold"><Plus className="h-4 w-4" /></button>
+              <button
+                onClick={() => setQty(qty + 1)}
+                aria-label="increase"
+                className="h-14 w-12 grid place-items-center text-muted-foreground hover:text-rose-gold"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
             </div>
             <button
-              onClick={() => { for (let i = 0; i < qty; i++) addToCart(product); }}
+              onClick={() => {
+                for (let i = 0; i < qty; i++) addToCart(product);
+              }}
               className="btn-luxury flex-1 h-14"
             >
               <ShoppingBag className="h-4 w-4" /> Add to bag
@@ -193,9 +263,13 @@ function ProductPage() {
 
       {related.length > 0 && (
         <section className="mt-24 md:mt-32">
-          <h2 className="font-display text-3xl md:text-4xl text-center mb-10 md:mb-12">You may also love</h2>
+          <h2 className="font-display text-3xl md:text-4xl text-center mb-10 md:mb-12">
+            You may also love
+          </h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
-            {related.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+            {related.map((p, i) => (
+              <ProductCard key={p.id} product={p} index={i} />
+            ))}
           </div>
         </section>
       )}
@@ -225,16 +299,31 @@ function Detail({ label, value }: { label: string; value: string }) {
 }
 
 function Lightbox({
-  open, onClose, images, index, setIndex, alt,
+  open,
+  onClose,
+  images,
+  index,
+  setIndex,
+  alt,
 }: {
-  open: boolean; onClose: () => void; images: string[]; index: number; setIndex: (i: number) => void; alt: string;
+  open: boolean;
+  onClose: () => void;
+  images: string[];
+  index: number;
+  setIndex: (i: number) => void;
+  alt: string;
 }) {
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const startTouches = useRef<{ d: number; cx: number; cy: number; ox: number; oy: number } | null>(null);
+  const startTouches = useRef<{ d: number; cx: number; cy: number; ox: number; oy: number } | null>(
+    null,
+  );
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
 
-  const reset = () => { setScale(1); setOffset({ x: 0, y: 0 }); };
+  const reset = () => {
+    setScale(1);
+    setOffset({ x: 0, y: 0 });
+  };
 
   const go = (dir: number) => {
     reset();
@@ -295,13 +384,18 @@ function Lightbox({
     <AnimatePresence>
       {open && (
         <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-md"
           style={{ backgroundColor: "rgba(15, 12, 18, 0.94)" }}
           onClick={onClose}
         >
           <button
-            onClick={(e) => { e.stopPropagation(); onClose(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             className="absolute top-5 right-5 z-[120] h-12 w-12 rounded-full grid place-items-center transition-colors pointer-events-auto"
             style={{ color: "var(--ivory)", backgroundColor: "rgba(255,255,255,0.12)" }}
             aria-label="Close"
@@ -339,7 +433,11 @@ function Lightbox({
               <button
                 key={i}
                 type="button"
-                onClick={(e) => { e.stopPropagation(); reset(); setIndex(i); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  reset();
+                  setIndex(i);
+                }}
                 className="h-3 rounded-full transition-all grid place-items-center"
                 style={{
                   width: i === index ? 36 : 10,
@@ -348,7 +446,9 @@ function Lightbox({
               >
                 <span
                   className="block h-1.5 w-full rounded-full"
-                  style={{ backgroundColor: i === index ? "var(--ivory)" : "rgba(255,255,255,0.4)" }}
+                  style={{
+                    backgroundColor: i === index ? "var(--ivory)" : "rgba(255,255,255,0.4)",
+                  }}
                 />
               </button>
             ))}

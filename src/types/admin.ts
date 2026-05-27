@@ -156,6 +156,29 @@ export interface Testimonial {
   updated_at?: string | null;
 }
 
+export interface HomepagePromise {
+  id: string;
+  icon?: string | null;
+  title: string;
+  description?: string | null;
+  active?: boolean | null;
+  display_order?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface NewsletterSection {
+  id: string;
+  eyebrow?: string | null;
+  title: string;
+  description?: string | null;
+  placeholder?: string | null;
+  button_label?: string | null;
+  active?: boolean | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
 export type OrderStatus = "Pending" | "Processing" | "Shipped" | "Delivered" | "Cancelled" | string;
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | string;
 

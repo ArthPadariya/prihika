@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -18,7 +18,7 @@ export function useAdminAuth(redirectUnauthorized = true): AdminAuthState {
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
     try {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -46,7 +46,7 @@ export function useAdminAuth(redirectUnauthorized = true): AdminAuthState {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, redirectUnauthorized]);
 
   useEffect(() => {
     void refresh();
@@ -58,17 +58,17 @@ export function useAdminAuth(redirectUnauthorized = true): AdminAuthState {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [refresh]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await signOutAdmin();
     setAdmin(null);
     toast.success("Signed out securely.");
     await navigate({ to: "/admin/login" });
-  };
+  }, [navigate]);
 
   return useMemo(
     () => ({ admin, loading, authorized: Boolean(admin), logout, refresh }),
-    [admin, loading],
+    [admin, loading, logout, refresh],
   );
 }
